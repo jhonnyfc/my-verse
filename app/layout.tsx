@@ -13,7 +13,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Bible Verse",
+  title: "Verse",
   description: "Discover today's verse.",
 };
 
