@@ -1,19 +1,15 @@
 "use server";
 
 import { getRandomElement, getRandomInt } from "@/lib/random";
+import { LANGUAGES, SupportedLanguage, DEFAULT_LANGUAGE } from "@/config/languages";
 
 export type Verse = {
   language: string;
+  bookId: string;
   book: string;
   chapter: number;
   verse: number;
   text: string;
-};
-
-// Supported languages and their corresponding Free Use Bible API translation IDs
-const TRANSLATIONS: Record<string, string> = {
-  en: "BSB", // Berean Standard Bible
-  es: "spa_r09", // Reina-Valera 1909
 };
 
 // A curated list of books and their total chapter counts for the randomizer
@@ -72,7 +68,7 @@ export async function getRandomVerseId(): Promise<string> {
   }
 }
 
-export async function getVerseFromId(id: string, lang: "en" | "es" = "en"): Promise<Verse | null> {
+export async function getVerseFromId(id: string, lang: SupportedLanguage = DEFAULT_LANGUAGE): Promise<Verse | null> {
   try {
     const [bookId, chapter, verseNumber] = id.split("-");
 
@@ -80,7 +76,8 @@ export async function getVerseFromId(id: string, lang: "en" | "es" = "en"): Prom
       return null;
     }
 
-    const translation = TRANSLATIONS[lang] || TRANSLATIONS["en"];
+    const config = LANGUAGES[lang] || LANGUAGES[DEFAULT_LANGUAGE];
+    const translation = config.helloAoTranslationId;
 
     // Fetch the specific chapter
     const response = await fetch(
@@ -110,6 +107,7 @@ export async function getVerseFromId(id: string, lang: "en" | "es" = "en"): Prom
         
       return {
         language: lang,
+        bookId,
         book: data.book.name,
         chapter: parseInt(chapter, 10),
         verse: firstVerse.number,
@@ -127,6 +125,7 @@ export async function getVerseFromId(id: string, lang: "en" | "es" = "en"): Prom
 
     return {
       language: lang,
+      bookId,
       book: bookName,
       chapter: parseInt(chapter, 10),
       verse: parseInt(verseNumber, 10),

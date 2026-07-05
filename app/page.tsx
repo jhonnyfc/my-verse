@@ -6,22 +6,27 @@ import { Button } from "@/components/ui/button";
 import { getRandomVerseId } from "@/services/verseService";
 import { useRouter } from "next/navigation";
 import { BookOpen, Loader2, Globe } from "lucide-react";
+import {
+  LANGUAGES,
+  SupportedLanguage,
+  DEFAULT_LANGUAGE,
+} from "@/config/languages";
 
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [lang, setLang] = useState<"en" | "es">("en");
+  const [lang, setLang] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
 
   // Load saved system language from localStorage on mount
   useEffect(() => {
-    const savedLang = localStorage.getItem("system_lang") as "en" | "es";
-    if (savedLang === "en" || savedLang === "es") {
+    const savedLang = localStorage.getItem("system_lang") as SupportedLanguage;
+    if (savedLang && Object.keys(LANGUAGES).includes(savedLang)) {
       setLang(savedLang);
     }
   }, []);
 
   // Update system language when selected
-  function handleLangChange(newLang: "en" | "es") {
+  function handleLangChange(newLang: SupportedLanguage) {
     setLang(newLang);
     localStorage.setItem("system_lang", newLang);
   }
@@ -57,6 +62,8 @@ export default function Home() {
     }
   }
 
+  const currentLangConfig = LANGUAGES[lang];
+
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 sm:p-24 overflow-hidden">
       <AnimatedBackground />
@@ -66,15 +73,20 @@ export default function Home() {
         <Globe className="w-4 h-4 ml-3 text-neutral-400" />
         <select
           value={lang}
-          onChange={(e) => handleLangChange(e.target.value as "en" | "es")}
+          onChange={(e) =>
+            handleLangChange(e.target.value as SupportedLanguage)
+          }
           className="bg-transparent text-sm font-medium text-neutral-200 outline-none cursor-pointer pr-3 py-1.5 focus:ring-0 appearance-none"
         >
-          <option className="bg-neutral-900" value="en">
-            English
-          </option>
-          <option className="bg-neutral-900" value="es">
-            Español
-          </option>
+          {Object.values(LANGUAGES).map((config) => (
+            <option
+              key={config.code}
+              className="bg-neutral-900"
+              value={config.code}
+            >
+              {config.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -107,10 +119,8 @@ export default function Home() {
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
-            ) : lang === "en" ? (
-              "Discover Today's Verse"
             ) : (
-              "Descubrir Versículo de Hoy"
+              currentLangConfig.labels.discoverVerse
             )}
           </Button>
         </div>
