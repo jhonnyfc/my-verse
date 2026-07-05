@@ -1,65 +1,120 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { Button } from "@/components/ui/button";
+import { getRandomVerseId } from "@/services/verseService";
+import { useRouter } from "next/navigation";
+import { BookOpen, Loader2, Globe } from "lucide-react";
 
 export default function Home() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [lang, setLang] = useState<"en" | "es">("en");
+
+  // Load saved system language from localStorage on mount
+  useEffect(() => {
+    const savedLang = localStorage.getItem("system_lang") as "en" | "es";
+    if (savedLang === "en" || savedLang === "es") {
+      setLang(savedLang);
+    }
+  }, []);
+
+  // Update system language when selected
+  function handleLangChange(newLang: "en" | "es") {
+    setLang(newLang);
+    localStorage.setItem("system_lang", newLang);
+  }
+
+  async function handleDiscover() {
+    setLoading(true);
+
+    const today = new Date().toDateString();
+    const storageDateKey = `daily_verse_date`;
+    const storageIdKey = `daily_verse_id`;
+
+    const savedDate = localStorage.getItem(storageDateKey);
+    const savedId = localStorage.getItem(storageIdKey);
+
+    // If we already generated a verse today, load it immediately with the selected language
+    if (savedDate === today && savedId) {
+      router.push(`/verse/${savedId}?lang=${lang}`);
+      return;
+    }
+
+    try {
+      // Otherwise, generate a new language-agnostic ID from the server action
+      const newId = await getRandomVerseId();
+
+      // Save it in local storage so it persists for the rest of the day globally
+      localStorage.setItem(storageDateKey, today);
+      localStorage.setItem(storageIdKey, newId);
+
+      router.push(`/verse/${newId}?lang=${lang}`);
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="relative flex min-h-screen flex-col items-center justify-center p-6 sm:p-24 overflow-hidden">
+      <AnimatedBackground />
+
+      {/* Header with Language Selector */}
+      <div className="absolute top-6 right-6 z-20 flex items-center space-x-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-lg animate-fade-in-up">
+        <Globe className="w-4 h-4 ml-3 text-neutral-400" />
+        <select
+          value={lang}
+          onChange={(e) => handleLangChange(e.target.value as "en" | "es")}
+          className="bg-transparent text-sm font-medium text-neutral-200 outline-none cursor-pointer pr-3 py-1.5 focus:ring-0 appearance-none"
+        >
+          <option className="bg-neutral-900" value="en">
+            English
+          </option>
+          <option className="bg-neutral-900" value="es">
+            Español
+          </option>
+        </select>
+      </div>
+
+      <div className="z-10 w-full max-w-3xl flex flex-col items-center text-center space-y-12">
+        <div
+          className="flex flex-col items-center space-y-4 animate-fade-in-up"
+          style={{ animationDuration: "1s", animationFillMode: "both" }}
+        >
+          <div className="p-3 bg-white/5 rounded-2xl backdrop-blur-md mb-2 shadow-xl ring-1 ring-white/10">
+            <BookOpen className="w-8 h-8 text-neutral-300" strokeWidth={1.5} />
+          </div>
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white via-neutral-200 to-neutral-500 pb-2">
+            Verse
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div
+          className="flex flex-col sm:flex-row items-center gap-4 animate-fade-in-up"
+          style={{
+            animationDelay: "0.2s",
+            animationDuration: "1s",
+            animationFillMode: "both",
+          }}
+        >
+          <Button
+            onClick={handleDiscover}
+            disabled={loading}
+            size="lg"
+            className="w-full sm:w-auto shadow-2xl shadow-white/10"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : lang === "en" ? (
+              "Discover Today's Verse"
+            ) : (
+              "Descubrir Versículo de Hoy"
+            )}
+          </Button>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

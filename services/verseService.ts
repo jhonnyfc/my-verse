@@ -1,0 +1,139 @@
+"use server";
+
+import { getRandomElement, getRandomInt } from "@/lib/random";
+
+export type Verse = {
+  language: string;
+  book: string;
+  chapter: number;
+  verse: number;
+  text: string;
+};
+
+// Supported languages and their corresponding Free Use Bible API translation IDs
+const TRANSLATIONS: Record<string, string> = {
+  en: "BSB", // Berean Standard Bible
+  es: "spa_r09", // Reina-Valera 1909
+};
+
+// A curated list of books and their total chapter counts for the randomizer
+const BOOKS = [
+  { id: "GEN", name: "Genesis", chapters: 50 },
+  { id: "PSA", name: "Psalms", chapters: 150 },
+  { id: "PRO", name: "Proverbs", chapters: 31 },
+  { id: "ISA", name: "Isaiah", chapters: 66 },
+  { id: "MAT", name: "Matthew", chapters: 28 },
+  { id: "JHN", name: "John", chapters: 21 },
+  { id: "ROM", name: "Romans", chapters: 16 },
+  { id: "EPH", name: "Ephesians", chapters: 6 },
+  { id: "PHP", name: "Philippians", chapters: 4 },
+  { id: "JAS", name: "James", chapters: 5 },
+];
+
+export async function getRandomVerseId(): Promise<string> {
+  // Use BSB (English) just to get the chapter structure and pick a random verse number
+  const translation = "BSB";
+
+  // Pick a random book
+  const randomBook = getRandomElement(BOOKS);
+
+  // Pick a random chapter (1 to max chapters inclusive)
+  const randomChapter = getRandomInt(1, randomBook.chapters + 1);
+
+  try {
+    // Fetch the chapter from the API to know how many verses it has
+    const response = await fetch(
+      `https://bible.helloao.org/api/${translation}/${randomBook.id}/${randomChapter}.json`,
+      { cache: "no-store" } // Ensure we always get fresh data
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch chapter");
+    }
+
+    const data = await response.json();
+
+    // Filter out headings, only get verses
+    const verses: {number: number}[] = data.chapter.content.filter((item: any) => item.type === "verse");
+
+    if (verses.length === 0) {
+      throw new Error("No verses found in this chapter");
+    }
+
+    // Pick a random verse from the chapter
+    const randomVerse = getRandomElement(verses);
+
+    // Format the ID without the language. e.g., "JHN-3-16"
+    return `${randomBook.id}-${randomChapter}-${randomVerse.number}`;
+  } catch (error) {
+    console.error("Error generating random verse ID:", error);
+    // Fallback ID if the API fails
+    return `JHN-3-16`;
+  }
+}
+
+export async function getVerseFromId(id: string, lang: "en" | "es" = "en"): Promise<Verse | null> {
+  try {
+    const [bookId, chapter, verseNumber] = id.split("-");
+
+    if (!bookId || !chapter || !verseNumber) {
+      return null;
+    }
+
+    const translation = TRANSLATIONS[lang] || TRANSLATIONS["en"];
+
+    // Fetch the specific chapter
+    const response = await fetch(
+      `https://bible.helloao.org/api/${translation}/${bookId}/${chapter}.json`,
+      { cache: "force-cache" } // We can cache this heavily since Bible text doesn't change
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+
+    // Find the specific verse
+    const verseObj = data.chapter.content.find(
+      (item: any) => item.type === "verse" && item.number === parseInt(verseNumber, 10)
+    );
+
+    if (!verseObj) {
+      // In rare cases where translations have different verse mappings, fallback to verse 1
+      const firstVerse = data.chapter.content.find((item: any) => item.type === "verse");
+      if (!firstVerse) return null;
+      
+      const fallbackText = Array.isArray(firstVerse.content)
+        ? firstVerse.content.map((c: any) => (typeof c === "string" ? c : c.text)).join("")
+        : firstVerse.content;
+        
+      return {
+        language: lang,
+        book: data.book.name,
+        chapter: parseInt(chapter, 10),
+        verse: firstVerse.number,
+        text: fallbackText,
+      };
+    }
+
+    // Combine text if it's an array (sometimes verse content is split by formatting)
+    const text = Array.isArray(verseObj.content)
+      ? verseObj.content.map((c: any) => (typeof c === "string" ? c : c.text)).join("")
+      : verseObj.content;
+
+    // Use the localized book name from the API response
+    const bookName = data.book.name;
+
+    return {
+      language: lang,
+      book: bookName,
+      chapter: parseInt(chapter, 10),
+      verse: parseInt(verseNumber, 10),
+      text,
+    };
+  } catch (error) {
+    console.error("Error fetching verse:", error);
+    return null;
+  }
+}
