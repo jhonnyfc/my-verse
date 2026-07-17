@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { LocalReminder } from "@/components/LocalReminder";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,6 +30,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-neutral-950 text-neutral-50 font-sans selection:bg-neutral-800 selection:text-white">
         {children}
+        <LocalReminder />
       </body>
     </html>
   );
