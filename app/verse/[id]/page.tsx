@@ -38,7 +38,7 @@ export async function generateMetadata(
   }
 
   const title = `YourVerse`;
-  const description = `"My today's verse: ${verse.text.substring(0, 25)}..."`;
+  const description = `"My today's verse: ${verse.text.substring(0, 30)}..."`;
 
   return {
     title,
@@ -106,7 +106,7 @@ export default async function VersePage({ params, searchParams }: Props) {
         <VerseCard verse={verse} />
         <ShareButton
           title={`YourVerse`}
-          text={`My today's verse: "${verse.text.substring(0, 25)}..."\n`}
+          text={`My today's verse: "${verse.text.substring(0, 30)}..."\n\n`}
         />
       </div>
     </main>
