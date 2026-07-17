@@ -69,28 +69,28 @@ export default function Home() {
       <AnimatedBackground />
 
       {/* Header with Language Selector */}
-      <div className="absolute top-6 right-6 z-20 flex items-center space-x-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-lg animate-fade-in-up">
-        <Globe className="w-4 h-4 ml-3 text-neutral-400" />
-        <select
-          value={lang}
-          onChange={(e) =>
-            handleLangChange(e.target.value as SupportedLanguage)
-          }
-          className="bg-transparent text-sm font-medium text-neutral-200 outline-none cursor-pointer pr-3 py-1.5 focus:ring-0 appearance-none"
-        >
-          {Object.values(LANGUAGES).map((config) => (
-            <option
-              key={config.code}
-              className="bg-neutral-900"
-              value={config.code}
-            >
-              {config.name}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <div className="z-10 w-full max-w-3xl flex flex-col items-center text-center space-y-12">
+        <div className="z-20 flex items-center space-x-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full p-1 shadow-lg animate-fade-in-up">
+          <Globe className="w-4 h-4 ml-3 text-neutral-400" />
+          <select
+            value={lang}
+            onChange={(e) =>
+              handleLangChange(e.target.value as SupportedLanguage)
+            }
+            className="bg-transparent text-sm font-medium text-neutral-200 outline-none cursor-pointer pr-3 py-1.5 focus:ring-0 appearance-none"
+          >
+            {Object.values(LANGUAGES).map((config) => (
+              <option
+                key={config.code}
+                className="bg-neutral-900"
+                value={config.code}
+              >
+                {config.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div
           className="flex flex-col items-center space-y-4 animate-fade-in-up"
           style={{ animationDuration: "1s", animationFillMode: "both" }}
