@@ -43,8 +43,8 @@ export function ShareButton({ text, title, className }: ShareButtonProps) {
     <button
       onClick={handleShare}
       className={cn(
-        "group flex items-center text-sm font-medium text-neutral-400 hover:text-white transition-colors",
-        className
+        "group flex items-center text-sm font-medium text-neutral-400 text-white transition-colors",
+        className,
       )}
     >
       {copied ? (
