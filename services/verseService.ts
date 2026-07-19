@@ -1,7 +1,12 @@
 "use server";
 
 import { getRandomElement, getRandomInt } from "@/lib/random";
-import { LANGUAGES, SupportedLanguage, DEFAULT_LANGUAGE } from "@/config/languages";
+import { encodeBase64Url, decodeBase64Url } from "@/lib/base64";
+import {
+  LANGUAGES,
+  SupportedLanguage,
+  DEFAULT_LANGUAGE,
+} from "@/config/languages";
 
 export type Verse = {
   language: string;
@@ -40,7 +45,7 @@ export async function getRandomVerseId(): Promise<string> {
     // Fetch the chapter from the API to know how many verses it has
     const response = await fetch(
       `https://bible.helloao.org/api/${translation}/${randomBook.id}/${randomChapter}.json`,
-      { cache: "no-store" } // Ensure we always get fresh data
+      { cache: "no-store" }, // Ensure we always get fresh data
     );
 
     if (!response.ok) {
@@ -50,7 +55,9 @@ export async function getRandomVerseId(): Promise<string> {
     const data = await response.json();
 
     // Filter out headings, only get verses
-    const verses: {number: number}[] = data.chapter.content.filter((item: any) => item.type === "verse");
+    const verses: { number: number }[] = data.chapter.content.filter(
+      (item: any) => item.type === "verse",
+    );
 
     if (verses.length === 0) {
       throw new Error("No verses found in this chapter");
@@ -60,17 +67,30 @@ export async function getRandomVerseId(): Promise<string> {
     const randomVerse = getRandomElement(verses);
 
     // Format the ID without the language. e.g., "JHN-3-16"
-    return `${randomBook.id}-${randomChapter}-${randomVerse.number}`;
+    const rawId = `${randomBook.id}-${randomChapter}-${randomVerse.number}`;
+    return encodeBase64Url(rawId);
   } catch (error) {
     console.error("Error generating random verse ID:", error);
     // Fallback ID if the API fails
-    return `JHN-3-16`;
+    const fallbackId = `JHN-3-16`;
+    return encodeBase64Url(fallbackId);
   }
 }
 
-export async function getVerseFromId(id: string, lang: SupportedLanguage = DEFAULT_LANGUAGE): Promise<Verse | null> {
+export async function getVerseFromId(
+  id: string,
+  lang: SupportedLanguage = DEFAULT_LANGUAGE,
+): Promise<Verse | null> {
   try {
-    const [bookId, chapter, verseNumber] = id.split("-");
+    let rawId = id;
+    // If it doesn't look like a raw ID (e.g., JHN-3-16), assume it's base64url encoded
+    try {
+      rawId = decodeBase64Url(id);
+    } catch (e) {
+      console.error("Failed to decode base64url ID", e);
+    }
+
+    const [bookId, chapter, verseNumber] = rawId.split("-");
 
     if (!bookId || !chapter || !verseNumber) {
       return null;
@@ -82,7 +102,7 @@ export async function getVerseFromId(id: string, lang: SupportedLanguage = DEFAU
     // Fetch the specific chapter
     const response = await fetch(
       `https://bible.helloao.org/api/${translation}/${bookId}/${chapter}.json`,
-      { cache: "force-cache" } // We can cache this heavily since Bible text doesn't change
+      { cache: "force-cache" }, // We can cache this heavily since Bible text doesn't change
     );
 
     if (!response.ok) {
@@ -93,18 +113,23 @@ export async function getVerseFromId(id: string, lang: SupportedLanguage = DEFAU
 
     // Find the specific verse
     const verseObj = data.chapter.content.find(
-      (item: any) => item.type === "verse" && item.number === parseInt(verseNumber, 10)
+      (item: any) =>
+        item.type === "verse" && item.number === parseInt(verseNumber, 10),
     );
 
     if (!verseObj) {
       // In rare cases where translations have different verse mappings, fallback to verse 1
-      const firstVerse = data.chapter.content.find((item: any) => item.type === "verse");
+      const firstVerse = data.chapter.content.find(
+        (item: any) => item.type === "verse",
+      );
       if (!firstVerse) return null;
-      
+
       const fallbackText = Array.isArray(firstVerse.content)
-        ? firstVerse.content.map((c: any) => (typeof c === "string" ? c : c.text)).join("")
+        ? firstVerse.content
+            .map((c: any) => (typeof c === "string" ? c : c.text))
+            .join("")
         : firstVerse.content;
-        
+
       return {
         language: lang,
         bookId,
@@ -117,7 +142,9 @@ export async function getVerseFromId(id: string, lang: SupportedLanguage = DEFAU
 
     // Combine text if it's an array (sometimes verse content is split by formatting)
     const text = Array.isArray(verseObj.content)
-      ? verseObj.content.map((c: any) => (typeof c === "string" ? c : c.text)).join("")
+      ? verseObj.content
+          .map((c: any) => (typeof c === "string" ? c : c.text))
+          .join("")
       : verseObj.content;
 
     // Use the localized book name from the API response
