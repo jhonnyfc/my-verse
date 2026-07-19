@@ -11,6 +11,7 @@ import {
   SupportedLanguage,
   DEFAULT_LANGUAGE,
 } from "@/config/languages";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function Home() {
   const router = useRouter();
@@ -67,6 +68,7 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 sm:p-24 overflow-hidden">
       <AnimatedBackground />
+      <Analytics />
 
       {/* Header with Language Selector */}
 

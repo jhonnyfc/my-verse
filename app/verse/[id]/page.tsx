@@ -11,6 +11,7 @@ import {
 } from "@/config/languages";
 import { ShareButton } from "@/components/ShareButton";
 import type { Metadata, ResolvingMetadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -79,6 +80,7 @@ export default async function VersePage({ params, searchParams }: Props) {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center p-6 sm:p-24 overflow-hidden">
       <AnimatedBackground />
+      <Analytics />
 
       <div className="z-10 w-full max-w-4xl flex flex-col items-center space-y-12">
         <div className="w-full flex justify-between items-center">
