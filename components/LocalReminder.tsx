@@ -67,7 +67,7 @@ export function LocalReminder() {
     return (
       <button
         onClick={requestPermission}
-        className="fixed bottom-4 right-4 z-50 flex items-center space-x-2 bg-neutral-900/80 backdrop-blur-sm border border-neutral-800 text-neutral-300 px-4 py-2 rounded-full shadow-lg hover:text-white hover:bg-neutral-800 transition-all text-sm font-medium group"
+        className="fixed top-4 left-4 z-50 flex items-center space-x-2 bg-neutral-900/80 backdrop-blur-sm border border-neutral-800 text-neutral-300 px-4 py-2 rounded-full shadow-lg hover:text-white hover:bg-neutral-800 transition-all text-sm font-medium group"
       >
         <Bell className="w-4 h-4 group-hover:scale-110 transition-transform" />
         <span>Enable Daily Reminder</span>
